@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Terraria.ModLoader.Core;
@@ -57,6 +58,7 @@ namespace Terraria.ModLoader
 			tML.InfoFormat("Starting tModLoader {0} {1} built {2}", dedServ ? "server" : "client", BuildInfo.BuildIdentifier, $"{BuildInfo.BuildDate:g}");
 			tML.InfoFormat("Log date: {0}", DateTime.Now.ToString("d"));
 			tML.InfoFormat("Running on {0} (v{1}) {2} {3} {4}", ReLogic.OS.Platform.Current.Type, Environment.OSVersion.Version, System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture, FrameworkVersion.Framework, FrameworkVersion.Version);
+			tML.InfoFormat("FrameworkDescription: {0}", RuntimeInformation.FrameworkDescription);
 			tML.InfoFormat("Executable: {0}", Assembly.GetEntryAssembly().Location);
 			tML.InfoFormat("Working Directory: {0}", Path.GetFullPath(Directory.GetCurrentDirectory()));
 
@@ -66,6 +68,8 @@ namespace Terraria.ModLoader
 				tML.InfoFormat("Launch Parameters: {0}", args);
 				tML.InfoFormat("Parsed Launch Parameters: {0}", string.Join(' ', Program.LaunchParameters.Select(p => ($"{p.Key} {p.Value}").Trim())));
 			}
+
+			DumpEnvVars();
 
 			string stackLimit = Environment.GetEnvironmentVariable("COMPlus_DefaultStackSize");
 
@@ -203,6 +207,19 @@ namespace Terraria.ModLoader
 			Console.ResetColor();
 
 			(log ?? Terraria).Logger.Log(null, level, msg, ex);
+		}
+
+		private static void DumpEnvVars() {
+			try {
+				using var f = File.OpenWrite(Path.Combine(LogDir, "environment.log"));
+				using var w = new StreamWriter(f);
+				foreach (var key in Environment.GetEnvironmentVariables().Keys) {
+					w.WriteLine($"{key}={Environment.GetEnvironmentVariable((string)key)}");
+				}
+			}
+			catch (Exception e) {
+				tML.Error("Failed to dump env vars", e);
+			}
 		}
 	}
 }
